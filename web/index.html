@@ -62,21 +62,41 @@ table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
 th{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap}
 td.st{white-space:nowrap}
+td.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
 .s-具备{color:var(--hi);font-weight:600} .s-不具备{color:var(--lo);font-weight:600} .s-待确认{color:var(--mid);font-weight:600}
 .tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:4px;background:var(--soft);margin:1px 2px 1px 0}
 mark{background:var(--accent-soft);color:inherit;padding:0 1px;border-radius:2px}
 code{font-family:var(--mono);font-size:12px}
 a{color:var(--accent)}
+nav.tabs{display:flex;gap:4px;margin:4px 0 2px}
+nav.tabs a{text-decoration:none;color:var(--muted);padding:6px 12px;border-bottom:2px solid transparent;font-weight:500}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+#v-teardown{padding-block:18px 56px;display:grid;gap:14px}
+#v-teardown>*{min-width:0}
+.prods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.prods{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.prods{grid-template-columns:1fr}}
+.prod{all:unset;box-sizing:border-box;min-width:0;overflow-wrap:anywhere;cursor:pointer;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:12px;display:grid;gap:4px}
+.prod[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.prod .own{font-size:11px;color:var(--accent);font-weight:600}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.grid2>*{min-width:0}
+ol.seq{margin:6px 0 0;padding-left:20px} ol.seq li{margin:4px 0}
+.rel{font-size:13px;padding:4px 0;border-bottom:1px dashed var(--line)}
+.rel b{font-weight:600} .rel i{font-style:normal;color:var(--accent);padding:0 4px}
+.tall{max-height:420px;overflow:auto}
 footer{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-block:18px}
 </style>
 
 <header><div class="wrap brand">
   <h1>注射器专利初筛台</h1>
   <p>27 件真实中国授权专利（Google Patents 公开文本）× 你的产品技术方案：自动拆解独立权利要求的技术特征，逐项比对，按全面覆盖原则排出「先看哪几件、看哪几个特征」。</p>
+  <nav class="tabs" aria-label="功能"><a href="#screen">专利初筛</a><a href="#teardown">竞品重构</a></nav>
   <span class="warn">研发阶段初筛工具，结论需专利工程师 / 律师复核，不构成侵权判断或法律意见。示例方案为虚构的设计概念。</span>
 </div></header>
 
-<main class="wrap">
+<main class="wrap" id="v-screen">
   <aside class="panel">
     <h2>产品技术方案</h2>
     <div class="seg" id="presets" role="group" aria-label="示例方案"></div>
@@ -96,6 +116,19 @@ footer{color:var(--muted);font-size:12px;border-top:1px solid var(--line);paddin
     <div class="plist" id="plist"></div>
   </section>
 </main>
+
+<section class="wrap" id="v-teardown" hidden>
+  <div class="panel"><h2>竞品重构：从专利说明书还原产品结构</h2>
+  <p class="note">专利说明书为了充分公开，会给每个零件编号并描述装配关系和工作过程。工具只读正文，自动还原：零件清单、装配关系、动作时序，并把几件产品放在一起对标。下面 6 件为真实专利：嘉树自己的 2 件，威高 2 件，诺和诺德 2 件。</p></div>
+  <div class="panel"><h2>对标表</h2><div class="scroll"><table id="td-cmp"></table></div><p class="note">对标维度由规则从全文提取，需工程师确认；「发明目的」为原文摘录。</p></div>
+  <div class="prods" id="td-prods"></div>
+  <div class="grid2">
+    <div class="panel"><h2 id="td-h">零件清单</h2><p class="note" id="td-ev"></p><div class="tall scroll"><table id="td-parts"></table></div></div>
+    <div class="panel"><h2>装配关系</h2><p class="note">同一句里出现两个零件和关系动词即抽取，点开原句核对。</p><div class="tall" id="td-rel"></div></div>
+  </div>
+  <div class="panel"><h2>动作时序（原文摘录，按出现顺序）</h2><ol class="seq" id="td-seq"></ol></div>
+  <div class="panel"><h2>零件识别准确吗</h2><div id="td-eval"></div></div>
+</section>
 <footer><div class="wrap">专利文本来源：Google Patents（中国授权专利公开文本，2026-11 抓取）。法律状态以国家知识产权局公告为准。作者：李江鑫 · 代码：github.com/li-iris/injector-patent-screener</div></footer>
 
 <script>
@@ -134,4 +167,23 @@ function applyPreset(k){preset=k;if(k!=="custom"){state={};const d=D.designs[k];
     const p=e.target.closest("[data-id]");if(p){open.has(p.dataset.id)?open.delete(p.dataset.id):open.add(p.dataset.id);render()}});
   applyPreset("A");const first=screen().find(r=>r.level==="高");if(first){open.add(first.p.id);render()}
 })();
+
+let T=null,tsel=null;
+function tdRender(){const P=T.products;if(!tsel)tsel=P[0].id;const own=a=>/Jiashu/i.test(a);
+  const ord=[...P].sort((a,b)=>own(b.assignee)-own(a.assignee));
+  $("#td-cmp").innerHTML=`<tr><th>产品（专利）</th><th>申请人</th><th>驱动</th><th>剂量</th><th>提示</th><th>防护</th><th>零件数</th><th>发明目的（原文）</th></tr>`+ord.map(p=>`<tr><td><b>${esc(p.title)}</b><br><span class="note">${p.id}</span></td><td>${esc(p.assignee)}${own(p.assignee)?' <span class="lv 低">嘉树</span>':''}</td><td>${p.profile.drive}</td><td>${p.profile.dose}</td><td>${p.profile.cue}</td><td>${p.profile.guard}</td><td>${Object.keys(p.parts).length}</td><td class="note" style="min-width:240px">${esc(p.profile.goal)}</td></tr>`).join("");
+  $("#td-prods").innerHTML=ord.map(p=>`<button class="prod" aria-pressed="${p.id===tsel}" data-td="${p.id}">${own(p.assignee)?'<span class="own">嘉树自有专利</span>':''}<b>${esc(p.title)}</b><span class="note">${p.id} · ${esc(p.assignee)}</span><span class="note">零件 ${Object.keys(p.parts).length} · 关系 ${p.relations.length} · 时序 ${p.sequence.length}</span></button>`).join("");
+  const p=P.find(x=>x.id===tsel);
+  $("#td-h").textContent=`零件清单（${Object.keys(p.parts).length} 个）`;
+  $("#td-ev").innerHTML=p.eval?`与专利自带的附图标记表比对：找全 ${Math.round(p.eval.recall*100)}%，准确 ${Math.round(p.eval.precision*100)}%`:"该专利没有附图标记表，无法自动评测，需人工核对。";
+  $("#td-parts").innerHTML=`<tr><th>编号</th><th>零件名称</th></tr>`+Object.entries(p.parts).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([k,v])=>`<tr><td class="n">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+  $("#td-rel").innerHTML=p.relations.slice(0,60).map(r=>`<details class="rel"><summary><b>${esc(r.a)}</b><i>${esc(r.rel)}</i><b>${esc(r.b)}</b></summary><p class="note">${esc(r.sent)}…</p></details>`).join("")||'<p class="note">未抽取到。</p>';
+  $("#td-seq").innerHTML=p.sequence.map(s=>`<li>${esc(s)}</li>`).join("")||'<li class="note">该专利对工作过程描述较少。</li>';
+  $("#td-eval").innerHTML=`<p class="note">两件专利（嘉树注射笔、威高自动注射器）在说明书里自带「附图标记说明」，正好当标准答案：工具读正文时先把这一段去掉，再把自己找出的零件和它比对。</p><div class="scroll"><table><tr><th>专利</th><th>标准答案</th><th>工具找到</th><th>其中正确</th><th>找全率</th><th>准确率</th><th>漏掉的</th></tr>${T.eval.map(e=>`<tr><td>${e.id}</td><td class="n">${e.gold}</td><td class="n">${e.found}</td><td class="n">${e.correct}</td><td class="n">${Math.round(e.recall*100)}%</td><td class="n">${Math.round(e.precision*100)}%</td><td class="note">${esc(e.missed.join("、"))}</td></tr>`).join("")}</table></div><p class="note">漏掉的多是只在附图里出现、正文没写的细节特征（如「推杆环槽」）。没有附图标记表的专利（如诺和诺德两件）抽取质量更依赖正文写法，例如会出现「螺纹」「标记」这类泛称，需要人工清理。</p>`;
+}
+function tdRoute(){const v=(location.hash||"#screen").slice(1)==="teardown"?"teardown":"screen";$("#v-screen").hidden=v!=="screen";$("#v-teardown").hidden=v!=="teardown";document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.getAttribute("href")==="#"+v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});if(v==="teardown"&&T)tdRender()}
+addEventListener("hashchange",tdRoute);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-td]");if(b){tsel=b.dataset.td;tdRender()}});
+fetch("teardown.json").then(r=>r.json()).then(d=>{T=d;tdRoute()}).catch(()=>{});
+tdRoute();
 </script>
