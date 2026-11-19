@@ -47,3 +47,17 @@ class TestJudge(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestTeardown(unittest.TestCase):
+    def test_part_extraction_against_reference_list(self):
+        from pts.teardown import main
+        res, ev = main()
+        self.assertEqual(len(ev), 2)
+        for e in ev:
+            self.assertGreaterEqual(e["recall"], 0.9); self.assertGreaterEqual(e["precision"], 0.95)
+
+    def test_longest_common_suffix_strips_prefix(self):
+        from pts.teardown import extract_parts
+        p = extract_parts("所述旋钮130与止位支架131连接，旋钮130带动所述止位支架131转动，转动旋钮130。")
+        self.assertEqual(p["130"], "旋钮"); self.assertEqual(p["131"], "止位支架")
