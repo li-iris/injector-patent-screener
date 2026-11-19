@@ -1,0 +1,137 @@
+<title>注射器专利初筛台</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* 布局：左侧「产品方案」逐项勾选（有/无/未定），右侧实时出专利初筛结果；点开一件专利看权利要求对比表（claim chart） */
+:root{
+  --bg:#f6f6f3; --panel:#ffffff; --ink:#1b1d1a; --muted:#61655e; --line:#e0e1da; --soft:#efefe9;
+  --accent:#3d5a2a; --accent-soft:#e4ecdc; --accent-ink:#ffffff;
+  --hi:#a3341f; --hi-soft:#f6e1dc; --mid:#8a6100; --mid-soft:#f4ead3; --lo:#2f6b46; --lo-soft:#ddefe3; --na:#7b7f78; --na-soft:#ebece8;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace; --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121411; --panel:#1a1d18; --ink:#e6e8e2; --muted:#a0a59b; --line:#2d3229; --soft:#22261f;
+  --accent:#a6c98c; --accent-soft:#26331d; --accent-ink:#121411;
+  --hi:#f19a87; --hi-soft:#3a1f19; --mid:#e2b75a; --mid-soft:#33290f; --lo:#86cfa0; --lo-soft:#18301f; --na:#a0a59b; --na-soft:#262a23; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121411; --panel:#1a1d18; --ink:#e6e8e2; --muted:#a0a59b; --line:#2d3229; --soft:#22261f;
+  --accent:#a6c98c; --accent-soft:#26331d; --accent-ink:#121411;
+  --hi:#f19a87; --hi-soft:#3a1f19; --mid:#e2b75a; --mid-soft:#33290f; --lo:#86cfa0; --lo-soft:#18301f; --na:#a0a59b; --na-soft:#262a23; color-scheme:dark}
+*{box-sizing:border-box} [hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.6}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{padding-block:16px 12px;display:grid;gap:4px}
+.brand h1{margin:0;font-size:20px}
+.brand p{margin:0;color:var(--muted);max-width:80ch}
+.warn{font-size:12.5px;color:var(--mid);background:var(--mid-soft);border-radius:8px;padding:6px 10px;display:inline-block}
+main{padding-block:18px 56px;display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){main{grid-template-columns:1fr}}
+main>*{min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+h2{margin:0 0 6px;font-size:15px} h3{margin:0;font-size:14.5px}
+.note{color:var(--muted);font-size:12.5px}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.seg button{font:inherit;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.clist{display:grid;gap:4px;margin-top:8px}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.tri{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.tri button{font:inherit;font-size:12px;border:0;background:var(--panel);color:var(--muted);padding:3px 8px;cursor:pointer}
+.tri button[aria-pressed="true"].y{background:var(--lo-soft);color:var(--lo);font-weight:600}
+.tri button[aria-pressed="true"].n{background:var(--hi-soft);color:var(--hi);font-weight:600}
+.tri button[aria-pressed="true"].u{background:var(--soft);color:var(--ink);font-weight:600}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:600px){.sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi .n{font-family:var(--mono);font-size:24px;line-height:1.1}
+.kpi .l{font-size:12.5px;color:var(--muted)}
+.lv{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;white-space:nowrap;font-weight:500}
+.lv.高{background:var(--hi-soft);color:var(--hi)} .lv.中{background:var(--mid-soft);color:var(--mid)} .lv.低{background:var(--lo-soft);color:var(--lo)} .lv.不相关{background:var(--na-soft);color:var(--na)}
+.plist{display:grid;gap:8px;margin-top:12px}
+.plist>*,.pat>button>*,.chart>*{min-width:0}
+.pat .m{overflow-wrap:anywhere}
+.pat{border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+.pat>button{all:unset;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;cursor:pointer;width:100%;box-sizing:border-box}
+.pat>button:focus-visible{outline:2px solid var(--accent)}
+.pat .t{font-weight:500} .pat .m{font-size:12px;color:var(--muted)}
+.chart{padding:0 12px 12px;display:grid;gap:10px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap}
+td.st{white-space:nowrap}
+.s-具备{color:var(--hi);font-weight:600} .s-不具备{color:var(--lo);font-weight:600} .s-待确认{color:var(--mid);font-weight:600}
+.tag{display:inline-block;font-size:11px;padding:0 6px;border-radius:4px;background:var(--soft);margin:1px 2px 1px 0}
+mark{background:var(--accent-soft);color:inherit;padding:0 1px;border-radius:2px}
+code{font-family:var(--mono);font-size:12px}
+a{color:var(--accent)}
+footer{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-block:18px}
+</style>
+
+<header><div class="wrap brand">
+  <h1>注射器专利初筛台</h1>
+  <p>27 件真实中国授权专利（Google Patents 公开文本）× 你的产品技术方案：自动拆解独立权利要求的技术特征，逐项比对，按全面覆盖原则排出「先看哪几件、看哪几个特征」。</p>
+  <span class="warn">研发阶段初筛工具，结论需专利工程师 / 律师复核，不构成侵权判断或法律意见。示例方案为虚构的设计概念。</span>
+</div></header>
+
+<main class="wrap">
+  <aside class="panel">
+    <h2>产品技术方案</h2>
+    <div class="seg" id="presets" role="group" aria-label="示例方案"></div>
+    <p class="note" id="pdesc"></p>
+    <p class="note">逐项标注方案「有 / 无 / 未定」。改动后右侧结果立即重算。</p>
+    <div class="clist" id="clist"></div>
+  </aside>
+  <section>
+    <div class="sum" id="sum"></div>
+    <div class="panel" style="margin-top:12px">
+      <h2>怎么读结果</h2>
+      <p class="note"><span class="lv 高">重点复核</span> 某项独立权利要求涉及的技术概念，方案全部具备，需人工比对结构细节。
+      <span class="lv 中">需补充信息</span> 有特征涉及方案「未定」或没识别出的概念。
+      <span class="lv 低">可初步排除</span> 每项独立权利要求都至少有一个特征方案明确没有（全面覆盖原则）。
+      <span class="lv 不相关">不相关</span> 药物制剂、储运设备等非注射器结构专利。</p>
+    </div>
+    <div class="plist" id="plist"></div>
+  </section>
+</main>
+<footer><div class="wrap">专利文本来源：Google Patents（中国授权专利公开文本，2026-11 抓取）。法律状态以国家知识产权局公告为准。作者：李江鑫 · 代码：github.com/li-iris/injector-patent-screener</div></footer>
+
+<script>
+const $=s=>document.querySelector(s), esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let D=null,RX={},state={},preset="A",open=new Set();
+const NON=/制剂|抗体|蛋白质|冷却器|组合物/, LV={"高":"重点复核","中":"需补充信息","低":"可初步排除","不相关":"不相关"}, ORD={"高":0,"中":1,"低":2,"不相关":3};
+function conceptsOf(t){return Object.keys(RX).filter(k=>RX[k].test(t))}
+function judge(f){const cs=conceptsOf(f);if(!cs.length)return["待确认",cs,"没有识别出技术概念，需人工阅读"];
+  const miss=cs.filter(c=>state[c]==="n");if(miss.length)return["不具备",cs,"方案没有："+miss.join("、")];
+  const unk=cs.filter(c=>state[c]!=="y");if(unk.length)return["待确认",cs,"方案未说明："+unk.join("、")];return["具备",cs,"涉及的概念方案都有"]}
+function screen(){return D.patents.map(p=>{if(NON.test(p.title))return{p,level:"不相关",claims:[]};
+  const claims=p.independent.map(c=>{const fs=c.features.map(f=>{const [s,cs,w]=judge(f.text);return{...f,s,cs,w}});
+    const lv=/方法/.test(c.subject)?"中":fs.some(f=>f.s==="不具备")?"低":(fs.length&&fs.every(f=>f.s==="具备")?"高":"中");return{...c,fs,lv}});
+  const level=claims.length?claims.map(c=>c.lv).sort((a,b)=>ORD[a]-ORD[b])[0]:"中";return{p,level,claims}}).sort((a,b)=>ORD[a.level]-ORD[b.level]||(b.p.filed>a.p.filed?1:-1))}
+function mark(t,cs){let h=esc(t);for(const c of cs){h=h.replace(new RegExp("("+D.concepts[c]+")","g"),"<mark>$1</mark>")}return h}
+function render(){
+  const R=screen(),cnt=k=>R.filter(r=>r.level===k).length;
+  $("#sum").innerHTML=["高","中","低","不相关"].map(k=>`<div class="panel kpi"><div class="n">${cnt(k)}</div><div class="l"><span class="lv ${k}">${LV[k]}</span></div></div>`).join("");
+  $("#plist").innerHTML=R.map(r=>{const p=r.p,isOpen=open.has(p.id);
+    const chart=isOpen?`<div class="chart"><p class="note">${esc(p.abstract)}…</p>${r.claims.map(c=>`<div><h3>权利要求 ${c.no}（独立${/方法/.test(c.subject)?"，方法权利要求":""}） <span class="lv ${c.lv}">${LV[c.lv]}</span></h3>${/方法/.test(c.subject)?'<p class="note">方法权利要求保护的是制造或使用过程，不能只拿产品结构比对，需另行评估。</p>':""}
+      <div class="scroll"><table><tr><th>#</th><th>技术特征（原文）</th><th>识别的概念</th><th>比对</th><th>说明</th></tr>${c.fs.map(f=>`<tr><td>${f.i}</td><td style="min-width:260px">${mark(f.text,f.cs)}</td><td>${f.cs.map(x=>`<span class="tag">${x}</span>`).join("")||"—"}</td><td class="st s-${f.s}">${f.s}</td><td class="note">${esc(f.w)}</td></tr>`).join("")}</table></div></div>`).join("")||'<p class="note">药物制剂 / 储运设备类专利，不做结构比对。</p>'}
+      <p class="note"><a href="${p.url}" target="_blank" rel="noopener">在 Google Patents 查看全文 ↗</a> · 共 ${p.n_claims} 项权利要求，其中独立权利要求 ${p.independent.length} 项</p></div>`:"";
+    return `<div class="pat"><button aria-expanded="${isOpen}" data-id="${p.id}"><span class="lv ${r.level}">${LV[r.level]}</span><span><span class="t">${esc(p.title)}</span><br><span class="m">${p.id} · ${esc(p.assignee)} · 申请日 ${p.filed}</span></span><span class="m">${isOpen?"收起":"展开对比表"}</span></button>${chart}</div>`}).join("");
+}
+function renderSide(){
+  $("#presets").innerHTML=Object.entries(D.designs).map(([k,d])=>`<button aria-pressed="${k===preset}" data-preset="${k}">${esc(d.name.split("：")[0])}</button>`).join("")+`<button aria-pressed="${preset==="custom"}" data-preset="custom">自定义</button>`;
+  $("#pdesc").textContent=preset==="custom"?"从当前勾选开始，按你的设计逐项修改。":D.designs[preset].name+"。"+D.designs[preset].desc;
+  $("#clist").innerHTML=Object.keys(D.concepts).map(c=>`<div class="crow"><span>${esc(c)}</span><span class="tri" role="group" aria-label="${esc(c)}">${[["y","有"],["n","无"],["u","未定"]].map(([v,l])=>`<button class="${v}" aria-pressed="${(state[c]||"u")===v}" data-c="${esc(c)}" data-v="${v}">${l}</button>`).join("")}</span></div>`).join("");
+}
+function applyPreset(k){preset=k;if(k!=="custom"){state={};const d=D.designs[k];d.has.forEach(c=>state[c]="y");d.not_.forEach(c=>state[c]="n")}renderSide();render()}
+(async()=>{
+  try{D=await fetch("data.json").then(r=>r.json())}catch(e){$("#plist").innerHTML='<p class="note">数据载入失败，请刷新页面。</p>';return}
+  for(const [k,v] of Object.entries(D.concepts))RX[k]=new RegExp(v);
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-preset]");if(b)return applyPreset(b.dataset.preset);
+    const t=e.target.closest("[data-c]");if(t){state[t.dataset.c]=t.dataset.v;preset="custom";renderSide();render();return}
+    const p=e.target.closest("[data-id]");if(p){open.has(p.dataset.id)?open.delete(p.dataset.id):open.add(p.dataset.id);render()}});
+  applyPreset("A");const first=screen().find(r=>r.level==="高");if(first){open.add(first.p.id);render()}
+})();
+</script>
